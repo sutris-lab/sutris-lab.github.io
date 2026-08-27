@@ -4,45 +4,131 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trizz Hub - Personal Links</title>
-    <!-- Menggunakan Tailwind CSS via CDN untuk styling praktis -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 flex items-center justify-center min-h-screen font-sans">
-    <div class="max-w-md w-full p-6 text-center">
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans flex flex-col items-center py-10">
+    <div class="max-w-md w-full p-6">
         
-        <!-- Header / Profil Trizz -->
-        <div class="mb-8">
-            <div class="w-24 h-24 bg-gray-800 rounded-full mx-auto mb-4 border-2 border-yellow-500 flex items-center justify-center text-3xl font-bold text-yellow-500">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <div class="w-24 h-24 bg-slate-800 rounded-full mx-auto mb-4 border-2 border-yellow-500 flex items-center justify-center text-4xl font-bold text-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.3)]">
                 T
             </div>
-            <h1 class="text-3xl font-bold mb-1">Trizz</h1>
-            <p class="text-gray-400 text-sm">Personal Web & Bookmark Hub</p>
+            <h1 class="text-3xl font-bold mb-1 tracking-wider">Trizz</h1>
+            <p class="text-slate-400 text-sm">Personal Web & Bookmark Hub</p>
         </div>
 
-        <!-- Kumpulan Link -->
-        <div class="flex flex-col gap-4">
-            <a href="https://github.com/sutris-lab/sutris-lab.github.io" target="_blank" class="block bg-gray-800 hover:bg-yellow-500 hover:text-gray-900 transition-colors py-3 px-6 rounded-lg font-semibold border border-gray-700 hover:border-transparent">
+        <!-- Form Tambah Link (Default Disembunyikan) -->
+        <div id="addForm" class="hidden bg-slate-800 p-4 rounded-lg mb-6 border border-slate-700">
+            <h2 class="text-sm font-semibold text-yellow-500 mb-3">Tambah Bookmark Pribadi</h2>
+            <input type="text" id="linkName" placeholder="Nama Link (Cth: Sosmedku)" class="w-full mb-3 p-2 bg-slate-900 border border-slate-700 rounded text-sm text-white focus:outline-none focus:border-yellow-500">
+            <input type="url" id="linkUrl" placeholder="URL (Cth: https://...)" class="w-full mb-3 p-2 bg-slate-900 border border-slate-700 rounded text-sm text-white focus:outline-none focus:border-yellow-500">
+            <div class="flex gap-2">
+                <button onclick="saveLink()" class="flex-1 bg-yellow-500 text-slate-900 font-bold py-2 rounded text-sm hover:bg-yellow-400 transition-colors">Simpan</button>
+                <button onclick="toggleForm()" class="flex-1 bg-slate-700 text-white font-bold py-2 rounded text-sm hover:bg-slate-600 transition-colors">Batal</button>
+            </div>
+        </div>
+
+        <!-- Daftar Link Bawaan Trizz -->
+        <div id="linkContainer" class="flex flex-col gap-3">
+            <a href="https://github.com/sutris-lab/sutris-lab.github.io" target="_blank" class="block bg-slate-800 hover:bg-yellow-500 hover:text-slate-900 transition-colors py-3 px-6 rounded-lg font-semibold border border-slate-700 hover:border-transparent text-center">
                 🛠️ Referensi Koding
             </a>
-            
-            <a href="https://fonts.google.com/" target="_blank" class="block bg-gray-800 hover:bg-yellow-500 hover:text-gray-900 transition-colors py-3 px-6 rounded-lg font-semibold border border-gray-700 hover:border-transparent">
+            <a href="https://fonts.google.com/" target="_blank" class="block bg-slate-800 hover:bg-yellow-500 hover:text-slate-900 transition-colors py-3 px-6 rounded-lg font-semibold border border-slate-700 hover:border-transparent text-center">
                 🎨 Koleksi Font & Desain
             </a>
-            
-            <a href="https://monkeytype.com/" target="_blank" class="block bg-gray-800 hover:bg-yellow-500 hover:text-gray-900 transition-colors py-3 px-6 rounded-lg font-semibold border border-gray-700 hover:border-transparent">
+            <a href="https://monkeytype.com/" target="_blank" class="block bg-slate-800 hover:bg-yellow-500 hover:text-slate-900 transition-colors py-3 px-6 rounded-lg font-semibold border border-slate-700 hover:border-transparent text-center">
                 ⌨️ Typing Test
             </a>
-            <a href="https://nontonanime.co/" target="_blank" class="block bg-gray-800 hover:bg-yellow-500 hover:text-gray-900 transition-colors py-3 px-6 rounded-lg font-semibold border border-gray-700 hover:border-transparent">
+            <a href="https://nontonanime.co/" target="_blank" class="block bg-slate-800 hover:bg-yellow-500 hover:text-slate-900 transition-colors py-3 px-6 rounded-lg font-semibold border border-slate-700 hover:border-transparent text-center">
                 📺 Nonton Anime
             </a>
             
+            <!-- Wadah untuk link baru yang ditambah pengunjung -->
+            <div id="customLinks" class="flex flex-col gap-3 mt-2"></div>
+
+            <!-- Tombol Trigger Form Tambah Link -->
+            <button onclick="toggleForm()" class="mt-4 border-2 border-dashed border-slate-600 text-slate-400 hover:text-yellow-500 hover:border-yellow-500 transition-colors py-3 px-6 rounded-lg font-semibold text-center w-full">
+                + Tambah Link Pribadi
+            </button>
         </div>
         
-        <!-- Watermark / Footer -->
-        <footer class="mt-16 text-sm text-gray-600 font-mono tracking-widest">
+        <!-- Footer -->
+        <footer class="mt-12 text-center text-xs text-slate-500 font-mono tracking-widest">
             &copy; 2026 TRIZZ
         </footer>
 
     </div>
+
+    <!-- Script JavaScript untuk Fitur Local Storage -->
+    <script>
+        // Jalankan loadLinks saat halaman pertama kali dibuka
+        document.addEventListener("DOMContentLoaded", loadLinks);
+
+        // Fungsi buka/tutup form
+        function toggleForm() {
+            const form = document.getElementById('addForm');
+            form.classList.toggle('hidden');
+        }
+
+        // Fungsi menyimpan link ke memori browser
+        function saveLink() {
+            const name = document.getElementById('linkName').value;
+            let url = document.getElementById('linkUrl').value;
+
+            if (!name || !url) {
+                alert("Nama dan URL tidak boleh kosong!");
+                return;
+            }
+            
+            // Rapikan URL jika tidak ada http/https
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+
+            // Ambil data yang sudah ada, lalu tambahkan yang baru
+            let links = JSON.parse(localStorage.getItem('trizzLinks')) || [];
+            links.push({ name: name, url: url });
+            localStorage.setItem('trizzLinks', JSON.stringify(links));
+
+            // Bersihkan form
+            document.getElementById('linkName').value = '';
+            document.getElementById('linkUrl').value = '';
+            toggleForm();
+            loadLinks();
+        }
+
+        // Fungsi memunculkan link dari memori browser ke layar
+        function loadLinks() {
+            const customLinksDiv = document.getElementById('customLinks');
+            let links = JSON.parse(localStorage.getItem('trizzLinks')) || [];
+            
+            customLinksDiv.innerHTML = ''; // Bersihkan layar sebelum dirender ulang
+
+            links.forEach((link, index) => {
+                const linkEl = document.createElement('div');
+                linkEl.className = "flex items-center gap-2";
+                
+                linkEl.innerHTML = `
+                    <a href="${link.url}" target="_blank" class="flex-1 bg-slate-800 hover:bg-yellow-500 hover:text-slate-900 transition-colors py-3 px-6 rounded-lg font-semibold border border-slate-700 hover:border-transparent text-center">
+                        📌 ${link.name}
+                    </a>
+                    <button onclick="deleteLink(${index})" class="bg-red-900/50 hover:bg-red-600 text-red-200 py-3 px-4 rounded-lg border border-red-800 transition-colors" title="Hapus">
+                        X
+                    </button>
+                `;
+                customLinksDiv.appendChild(linkEl);
+            });
+        }
+
+        // Fungsi menghapus link dari memori
+        function deleteLink(index) {
+            let links = JSON.parse(localStorage.getItem('trizzLinks')) || [];
+            links.splice(index, 1);
+            localStorage.setItem('trizzLinks', JSON.stringify(links));
+            loadLinks();
+        }
+    </script>
 </body>
 </html>
