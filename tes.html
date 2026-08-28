@@ -38,12 +38,13 @@
         <!-- Form Tambah/Edit Link -->
         <div id="addForm" class="hidden bg-slate-800 p-4 rounded-lg mb-6 border border-slate-700 shadow-lg">
             <h2 id="formLinkTitle" class="text-sm font-semibold text-yellow-500 mb-3">Tambah Bookmark</h2>
-            <!-- Input tersembunyi untuk menyimpan index saat mode Edit -->
             <input type="hidden" id="editIndex" value="-1">
             
             <input type="text" id="linkName" placeholder="Nama Link (Cth: Sosmedku)" class="w-full mb-3 p-2 bg-slate-900 border border-slate-700 rounded text-sm text-white focus:outline-none focus:border-yellow-500">
             <input type="url" id="linkUrl" placeholder="URL (Cth: https://...)" class="w-full mb-3 p-2 bg-slate-900 border border-slate-700 rounded text-sm text-white focus:outline-none focus:border-yellow-500">
-            <input type="text" id="linkShortcut" placeholder="Shortcut Opsional (Cth: ctrl+y)" class="w-full mb-4 p-2 bg-slate-900 border border-slate-700 rounded text-sm text-white focus:outline-none focus:border-yellow-500">
+            
+            <!-- Placeholder diubah untuk ngasih tau pengunjung -->
+            <input type="text" id="linkShortcut" placeholder="Klik disini & tekan kombinasi keyboard!" class="w-full mb-4 p-2 bg-slate-900 border border-slate-700 rounded text-sm text-white focus:outline-none focus:border-yellow-500 text-center font-mono placeholder:font-sans placeholder:text-left">
             
             <div class="flex gap-2">
                 <button onclick="saveLink()" class="flex-1 bg-yellow-500 text-slate-900 font-bold py-2 rounded text-sm hover:bg-yellow-400 transition-colors">Simpan</button>
@@ -51,10 +52,8 @@
             </div>
         </div>
 
-        <!-- Daftar Semua Link (Termasuk Default) -->
-        <div id="linkContainer" class="flex flex-col gap-3">
-            <!-- Link akan dirender oleh JavaScript di sini -->
-        </div>
+        <!-- Daftar Semua Link -->
+        <div id="linkContainer" class="flex flex-col gap-3"></div>
 
         <!-- Tombol Aksi Bawah -->
         <div class="mt-6 flex flex-col gap-3">
@@ -66,7 +65,6 @@
             </button>
         </div>
         
-        <!-- Footer -->
         <footer class="mt-12 text-center text-xs text-slate-500 font-mono tracking-widest">
             &copy; 2026 TRIZZ
         </footer>
@@ -74,12 +72,11 @@
     </div>
 
     <script>
-        // Data Default Bawaan (Bisa diedit/dihapus oleh pengunjung)
         const defaultLinks = [
             { name: "🛠️ Referensi Koding", url: "https://github.com/sutris-lab/sutris-lab.github.io", shortcut: "" },
             { name: "🎨 Koleksi Font", url: "https://fonts.google.com/", shortcut: "" },
             { name: "⌨️ Typing Test", url: "https://monkeytype.com/", shortcut: "" },
-            { name: "📺 Nonton Anime", url: "https://nontonanime.co/", shortcut: "ctrl+shift+n" } // Contoh ada shortcut bawaan
+            { name: "📺 Nonton Anime", url: "https://nontonanime.co/", shortcut: "ctrl+shift+n" }
         ];
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -87,30 +84,57 @@
             loadProfile();
         });
 
-        // ================= FITUR SHORTCUT KEYBOARD =================
-        document.addEventListener('keydown', (e) => {
-            // Jangan jalankan shortcut kalau pengunjung lagi ngetik di dalam form
-            if (e.target.tagName === 'INPUT') return;
+        // ================= FITUR PEREKAM SHORTCUT OTOMATIS =================
+        const shortcutInput = document.getElementById('linkShortcut');
+        
+        shortcutInput.addEventListener('keydown', function(e) {
+            // Biarkan tombol Tab dan Escape berfungsi normal
+            if (e.key === 'Tab' || e.key === 'Escape') return;
 
-            // Kumpulkan tombol yang dipencet
+            e.preventDefault(); // Matikan fungsi ketik manual biasa
+
+            // Kalau tekan Backspace atau Delete, kosongkan inputnya
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                this.value = '';
+                return;
+            }
+
             let keys = [];
             if (e.ctrlKey) keys.push('ctrl');
             if (e.altKey) keys.push('alt');
             if (e.shiftKey) keys.push('shift');
             
-            // Hindari mentrigger hanya dari tombol modifier (Ctrl/Shift/Alt) saja
+            // Kalau pengunjung baru menekan/menahan tombol modifiernya saja
+            if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+                this.value = keys.join('+') + '+...';
+                return;
+            }
+
+            // Gabungkan modifier dengan tombol utama yang ditekan
+            keys.push(e.key.toLowerCase());
+            this.value = keys.join('+');
+        });
+
+        // ================= FITUR TRIGGER SHORTCUT GLOBAL =================
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+
+            let keys = [];
+            if (e.ctrlKey) keys.push('ctrl');
+            if (e.altKey) keys.push('alt');
+            if (e.shiftKey) keys.push('shift');
+            
             if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
 
             keys.push(e.key.toLowerCase());
-            let pressedString = keys.join('+'); // Hasilnya: "ctrl+shift+n" atau "ctrl+y"
+            let pressedString = keys.join('+');
 
-            // Cari apakah kombinasi tombol cocok dengan shortcut di memori
             let links = JSON.parse(localStorage.getItem('trizzLinks')) || [];
             let match = links.find(l => l.shortcut && l.shortcut.toLowerCase().replace(/\s+/g, '') === pressedString);
             
             if (match) {
-                e.preventDefault(); // Matikan fungsi default browser (biar nggak nge-print kalau ctrl+p dll)
-                window.open(match.url, '_blank'); // Buka link di tab baru
+                e.preventDefault(); 
+                window.open(match.url, '_blank'); 
             }
         });
 
@@ -180,14 +204,14 @@
             loadProfile(); toggleProfileForm();
         }
 
-        // ================= FITUR LINK & SHORTCUT =================
+        // ================= FITUR LINK =================
         function toggleForm() {
             document.getElementById('addForm').classList.toggle('hidden');
         }
 
         function openAddForm() {
             document.getElementById('formLinkTitle').innerText = "Tambah Bookmark";
-            document.getElementById('editIndex').value = "-1"; // -1 artinya mode tambah baru
+            document.getElementById('editIndex').value = "-1"; 
             document.getElementById('linkName').value = '';
             document.getElementById('linkUrl').value = '';
             document.getElementById('linkShortcut').value = '';
@@ -218,14 +242,11 @@
             if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
 
             let links = JSON.parse(localStorage.getItem('trizzLinks')) || [];
-            
             const newLinkData = { name: name, url: url, shortcut: shortcut.toLowerCase().trim() };
 
             if (editIndex > -1) {
-                // Mode Edit: Timpa data lama
                 links[editIndex] = newLinkData;
             } else {
-                // Mode Tambah: Masukkan ke urutan paling bawah
                 links.push(newLinkData);
             }
 
@@ -235,8 +256,6 @@
 
         function loadLinks() {
             const container = document.getElementById('linkContainer');
-            
-            // Cek apakah ada data di memori. Kalau kosong, pakai bawaan (defaultLinks).
             if (!localStorage.getItem('trizzLinks')) {
                 localStorage.setItem('trizzLinks', JSON.stringify(defaultLinks));
             }
@@ -248,7 +267,6 @@
                 const el = document.createElement('div');
                 el.className = "flex items-center gap-2 group";
                 
-                // Cek apakah link ini punya shortcut untuk ditampilkan
                 let shortcutBadge = link.shortcut ? `<span class="bg-slate-700 text-yellow-500 text-[10px] px-2 py-1 rounded ml-2 font-mono uppercase border border-yellow-500/30">${link.shortcut}</span>` : '';
 
                 el.innerHTML = `
@@ -279,7 +297,7 @@
         function resetLinksToDefault() {
             if(confirm("AWAS! Ini akan menghapus SEMUA link tambahanmu dan mengembalikan 4 link asli. Yakin?")) {
                 localStorage.removeItem('trizzLinks');
-                loadLinks(); // Otomatis bakal ngambil defaultLinks lagi
+                loadLinks(); 
             }
         }
     </script>
